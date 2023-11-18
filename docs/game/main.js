@@ -1,4 +1,4 @@
-title = "Number Cruncher";
+title = "Number Boss Rush";
 
 description = `
 [Tap]  Zero
@@ -32,6 +32,11 @@ let answer; 		// player input
 let correctAnswer;	// what input should match
 let binaryTxt;		// display text in binary
 let b10Txt;			// display text in base 10
+let playerHitPoints;// player hp, if hit zero, player loses
+let bossHitPoints	// boss hp, if hit zero player wins
+let playerAtk		// player damage, when they answer correctly they reduce boss hp by this variable
+let combo			// player combo, everytime the player succeeds up combo score, if they fail reset combo. combo impacts playerAtk
+let time
 
 // difficulty = digits
 function binaryArrayToStr(arr) { // function for printing arrays without commas
@@ -53,6 +58,8 @@ function Generator(digits){ // generates a number and saves it in str form to bi
 	b10Txt = String(resD);
 }
 
+
+
 function update() {
 	if (!ticks) { // Initialize variables
 		isPressing = false;
@@ -62,6 +69,11 @@ function update() {
 		answer = [];
 		correctAnswer = [];
 		binaryTxt = "testing";
+		playerHitPoints = 3;
+		bossHitPoints = 100;
+		playerAtk = 5;
+		combo = 1;
+		time = 0;
 	}
 	// Gen prompt
 	if (nextQ) {
@@ -76,11 +88,20 @@ function update() {
 		console.log(binaryTxt);
 		console.log(correctAnswer);
 		nextQ = false;
+
+		//combo = score;
+
+		playerAtk = playerAtk * combo;
 	}
 
-	color("red");
+	color("blue");
 	line(vec(0, 10), vec(timeout*100/questionTime, 10)); // timeout bar
 	text(String(floor(timeout*10/60)/10), vec(G.WIDTH/2-15, 4)); // timeout number
+
+
+	color("red");
+	line(vec(0, G.HEIGHT*2/4), vec((bossHitPoints), G.HEIGHT*2/4)); // bossHP
+	text("Boss Health", vec(G.WIDTH/5, G.HEIGHT/2.5) ); // bossHP
 
 	color("black");
 	text(b10Txt, vec(5, G.HEIGHT/4)); // question
@@ -90,9 +111,24 @@ function update() {
 	text(binaryTxt, vec(G.WIDTH/4, G.HEIGHT/4));
 	text(binaryArrayToStr(answer), vec(G.WIDTH/4, G.HEIGHT/2 + 10)); // input so far
 
-	color("red");
+	color("blue");
 	line(vec(0, G.HEIGHT*3/4), vec(G.WIDTH, G.HEIGHT*3/4)); // separator line for cancel area
 	text("Cancel", vec(G.WIDTH/2-16, G.HEIGHT*7/8)); // cancel text
+
+
+	color("green");
+	text("HP", vec(G.WIDTH/16, G.HEIGHT*7/8)); // HP
+	text(String(playerHitPoints), vec(G.WIDTH/16, G.HEIGHT*9.5/10));
+
+	color("black");
+	text(String(time), vec(G.WIDTH*.80, G.HEIGHT*9.5/10));
+
+	//text("Victory", vec(G.WIDTH/3.2, G.HEIGHT/2));
+	//text(String(time), vec(G.WIDTH/2.25, G.HEIGHT/1.7))
+
+	if(playerHitPoints <= 0){
+		end();
+	}
 
 	if(isPressing) { // indicator that youve held long enough
 		if(input.pos.y > G.HEIGHT*3/4) {
@@ -155,21 +191,46 @@ function update() {
 		}
 		if (correct) {
 			nextQ = true;
-			console.log("YIPPEEE!");
+			//console.log("YIPPEEE!");
 			play("powerUp");
-			score += timeout/100;
+			score += timeout/200;
+			combo = combo + timeout/200;
+
+			bossHitPoints = bossHitPoints - playerAtk
+
+
+			if(bossHitPoints <= 0){
+				end();
+
+				color("black");
+				text("Victory", vec(G.WIDTH/3.5, G.HEIGHT*.75));
+				text(String(time), vec(G.WIDTH/2.25, G.HEIGHT/1.5))
+				
+			}
+			
+			//dsadsadsa
 		} else {
 			play("explosion");
-			console.log("YUH OH!");
+
+			playerHitPoints--;
+			combo = 1;
+			score = 1;
+			//console.log("YUH OH!");
 		}
 		// empty answer
 		answer = [];
 	}
 	if (timeout <= 0) { // Check if prompt timed out
-		end();
+		playerHitPoints -= 1;
+		combo = 1;
+		score =1;
+
+		
+		//end();
 		//nextQ = true;
 		//answer = [];
 	} else {
 		timeout -= 1;
+		time++;
 	}
 }
